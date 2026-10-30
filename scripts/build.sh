@@ -123,10 +123,9 @@ build_kernel() {
 		info "using custom manager signature (size=${KSU_EXPECTED_SIZE})"
 	fi
 
-	local cc="clang" args
-	args=$(make_args)
-	if is_true "${ENABLE_CCACHE:-true}" && command -v ccache >/dev/null; then
-		cc="ccache clang"
+	   local cc="clang -fno-integrated-as -g0 -fno-asynchronous-unwind-tables" args
+   if is_true "${ENABLE_CCACHE:-true}" && command -v ccache >/dev/null; then
+       cc="ccache clang -fno-integrated-as -g0 -fno-asynchronous-unwind-tables"
 		export CCACHE_DIR="${CCACHE_DIR:-${WORKSPACE}/.ccache}"
 		info "ccache enabled (dir: ${CCACHE_DIR})"
 	fi
@@ -149,7 +148,7 @@ build_kernel() {
 			info "make ${args} ${stockconfig}"
 			git show HEAD:"arch/${ARCH}/configs/${KERNEL_CONFIG}" > "${kernel_stockconfig}"
 			# shellcheck disable=SC2086
-			make -j"$(nproc --all)" CC=clang $args "${stockconfig}" \
+			make -j"$(nproc --all)" CC="$cc" $args "${stockconfig}" \
 				|| die "stockconfig generation failed"
 			mv -v "${OUT}/.config" "${kernel_stockconfig}"
 		fi
@@ -158,7 +157,7 @@ build_kernel() {
 	fi
 	info "make ${args} ${KERNEL_CONFIG}"
 	# shellcheck disable=SC2086
-	make -j"$(nproc --all)" CC=clang $args "${KERNEL_CONFIG}" \
+	make -j"$(nproc --all)" CC="$cc" $args "${KERNEL_CONFIG}" \
 		|| die "defconfig generation failed"
 
 	info "make ${args}"
